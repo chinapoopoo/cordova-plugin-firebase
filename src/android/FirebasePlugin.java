@@ -244,12 +244,55 @@ public class FirebasePlugin extends CordovaPlugin {
 
                     if (currentToken != null) {
                         FirebasePlugin.sendToken(currentToken);
+                        updateDevice(currentToken);
                     }
                 } catch (Exception e) {
                     callbackContext.error(e.getMessage());
                 }
             }
         });
+    }
+
+    private void updateDevice(final String deviceId) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    String clientId = new WPDeviceUtils(WPFirebaseInstanceIDService.this).getDeviceId();
+                    URL url = new URL("https://app.handong.edu/api/device");
+
+                    HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                    urlConnection.setConnectTimeout(5000);
+                    urlConnection.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+                    urlConnection.setDoOutput(true);
+                    urlConnection.setDoInput(true);
+                    urlConnection.setRequestMethod("PUT");
+
+                    PackageInfo i = getPackageManager().getPackageInfo(getPackageName(), 0);
+
+                    JSONObject body = new JSONObject();
+                    Log.d(TAG, clientId);
+                    body.put("clientId", clientId);
+
+                    body.put("deviceId", deviceId);
+                    body.put("devicePlatform", "ANDROID");
+                    body.put("deviceModel", Build.MODEL);
+                    body.put("appVer", i.versionName);
+
+                    OutputStream os = urlConnection.getOutputStream();
+                    os.write(body.toString().getBytes("UTF-8"));
+                    os.close();
+
+                    int code = urlConnection.getResponseCode();
+                    Log.d(TAG, "REGISTER DEVICE: " + code);
+
+                    urlConnection.disconnect();
+
+                } catch (Exception e) {
+
+                }
+            }
+        }).start();
     }
 
     public static void sendNotification(Bundle bundle, Context context) {

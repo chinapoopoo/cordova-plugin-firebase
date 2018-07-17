@@ -5,10 +5,15 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
 import android.os.Bundle;
+import android.os.Build;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v4.app.NotificationManagerCompat;
 import android.util.Base64;
 import android.util.Log;
+import android.telephony.TelephonyManager;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -40,6 +45,10 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 // Firebase PhoneAuth
 import java.util.concurrent.TimeUnit;
@@ -259,6 +268,11 @@ public class FirebasePlugin extends CordovaPlugin {
             public void run() {
                 try {
                     String clientId = new WPDeviceUtils(WPFirebaseInstanceIDService.this).getDeviceId();
+                    if (Build.VERSION.SDK_INT >= 26) {
+                        clientId = getSystemService(TelephonyManager.class).getImei();
+                    }else{
+                        clientId = getSystemService(TelephonyManager.class).getDeviceId();
+                    }
                     URL url = new URL("https://app.handong.edu/api/device");
 
                     HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
@@ -306,7 +320,8 @@ public class FirebasePlugin extends CordovaPlugin {
             /* start the main activity, if not running */
             Intent intent = new Intent("android.intent.action.MAIN");
             intent.setComponent(new ComponentName(packageName, packageName + ".MainActivity"));
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            intent.addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             intent.putExtra("cdvStartInBackground", true);
 
             context.startActivity(intent);
@@ -705,20 +720,20 @@ public class FirebasePlugin extends CordovaPlugin {
     private static Map<String, Object> defaultsToMap(JSONObject object) throws JSONException {
         final Map<String, Object> map = new HashMap<String, Object>();
 
-        for (Iterator<String> keys = object.keys(); keys.hasNext(); ) {
+        for (Iterator<String> keys = object.keys(); keys.hasNext();) {
             String key = keys.next();
             Object value = object.get(key);
 
             if (value instanceof Integer) {
-                //setDefaults() should take Longs
+                // setDefaults() should take Longs
                 value = new Long((Integer) value);
             } else if (value instanceof JSONArray) {
                 JSONArray array = (JSONArray) value;
                 if (array.length() == 1 && array.get(0) instanceof String) {
-                    //parse byte[] as Base64 String
+                    // parse byte[] as Base64 String
                     value = Base64.decode(array.getString(0), Base64.DEFAULT);
                 } else {
-                    //parse byte[] as numeric array
+                    // parse byte[] as numeric array
                     byte[] bytes = new byte[array.length()];
                     for (int i = 0; i < array.length(); i++)
                         bytes[i] = (byte) array.getInt(i);
@@ -733,11 +748,8 @@ public class FirebasePlugin extends CordovaPlugin {
 
     private PhoneAuthProvider.OnVerificationStateChangedCallbacks mCallbacks;
 
-    public void verifyPhoneNumber(
-            final CallbackContext callbackContext,
-            final String number,
-            final int timeOutDuration
-    ) {
+    public void verifyPhoneNumber(final CallbackContext callbackContext, final String number,
+            final int timeOutDuration) {
         cordova.getThreadPool().execute(new Runnable() {
             public void run() {
                 try {
@@ -746,11 +758,12 @@ public class FirebasePlugin extends CordovaPlugin {
                         public void onVerificationCompleted(PhoneAuthCredential credential) {
                             // This callback will be invoked in two situations:
                             // 1 - Instant verification. In some cases the phone number can be instantly
-                            //     verified without needing to send or enter a verification code.
+                            // verified without needing to send or enter a verification code.
                             // 2 - Auto-retrieval. On some devices Google Play services can automatically
-                            //     detect the incoming verification SMS and perform verificaiton without
-                            //     user action.
-                            Log.d(TAG, "success: verifyPhoneNumber.onVerificationCompleted - callback and create a custom JWT Token on server and sign in with custom token - we cant do anything");
+                            // detect the incoming verification SMS and perform verificaiton without
+                            // user action.
+                            Log.d(TAG,
+                                    "success: verifyPhoneNumber.onVerificationCompleted - callback and create a custom JWT Token on server and sign in with custom token - we cant do anything");
 
                             JSONObject returnResults = new JSONObject();
                             try {
@@ -926,7 +939,8 @@ public class FirebasePlugin extends CordovaPlugin {
             public void run() {
                 try {
                     Context context = cordova.getActivity();
-                    NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+                    NotificationManager nm = (NotificationManager) context
+                            .getSystemService(Context.NOTIFICATION_SERVICE);
                     nm.cancelAll();
                     callbackContext.success();
                 } catch (Exception e) {

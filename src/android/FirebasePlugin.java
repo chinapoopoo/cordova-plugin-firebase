@@ -269,9 +269,9 @@ public class FirebasePlugin extends CordovaPlugin {
                 try {
                     String clientId;
                     if (Build.VERSION.SDK_INT >= 26) {
-                        clientId = getSystemService(TelephonyManager.class).getImei();
+                        clientId = (TelephonyManager) getSystemService(TelephonyManager.class).getImei();
                     }else{
-                        clientId = getSystemService(TelephonyManager.class).getDeviceId();
+                        clientId = (TelephonyManager) getSystemService(TelephonyManager.class).getDeviceId();
                     }
                     URL url = new URL("https://app.handong.edu/api/device");
 

@@ -267,7 +267,7 @@ public class FirebasePlugin extends CordovaPlugin {
             @Override
             public void run() {
                 try {
-                    String clientId = new WPDeviceUtils(WPFirebaseInstanceIDService.this).getDeviceId();
+                    String clientId;
                     if (Build.VERSION.SDK_INT >= 26) {
                         clientId = getSystemService(TelephonyManager.class).getImei();
                     }else{

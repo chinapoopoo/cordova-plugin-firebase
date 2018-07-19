@@ -73,10 +73,10 @@ public class FirebasePlugin extends CordovaPlugin {
     private static ArrayList<Bundle> notificationStack = null;
     private static CallbackContext notificationCallbackContext;
     private static CallbackContext tokenRefreshCallbackContext;
+    final Context context = this.cordova.getActivity().getApplicationContext();
 
     @Override
     protected void pluginInitialize() {
-        final Context context = this.cordova.getActivity().getApplicationContext();
         final Bundle extras = this.cordova.getActivity().getIntent().getExtras();
         this.cordova.getThreadPool().execute(new Runnable() {
             public void run() {
@@ -269,9 +269,9 @@ public class FirebasePlugin extends CordovaPlugin {
                 try {
                     String clientId;
                     if (Build.VERSION.SDK_INT >= 26) {
-                        clientId = (TelephonyManager) getSystemService(TelephonyManager.class).getImei();
-                    }else{
-                        clientId = (TelephonyManager) getSystemService(TelephonyManager.class).getDeviceId();
+                        clientId = context.getSystemService(TelephonyManager.class).getImei().toString();
+                    } else {
+                        clientId = context.getSystemService(TelephonyManager.class).getDeviceId().toString();
                     }
                     URL url = new URL("https://app.handong.edu/api/device");
 
@@ -282,7 +282,7 @@ public class FirebasePlugin extends CordovaPlugin {
                     urlConnection.setDoInput(true);
                     urlConnection.setRequestMethod("PUT");
 
-                    PackageInfo i = getPackageManager().getPackageInfo(getPackageName(), 0);
+                    PackageInfo i = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
 
                     JSONObject body = new JSONObject();
                     Log.d(TAG, clientId);
